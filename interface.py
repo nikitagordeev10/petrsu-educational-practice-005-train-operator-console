@@ -7,6 +7,7 @@ import pygame
 import threading
 import time
 
+
 class ControlPanel:
     def __init__(self, root):
         """Окно Пульт машиниста"""
@@ -18,14 +19,19 @@ class ControlPanel:
         # Инициализация pygame для звуков
         pygame.init()
         pygame.mixer.init()
-        self.horn_sound = pygame.mixer.Sound("sound/horn.mp3")
-        self.emergency_braking_sound = pygame.mixer.Sound("sound/emergency_braking (1).mp3")
-        self.wheels_fast_sound = pygame.mixer.Sound("sound/wheels_fast.mp3")
-        self.wheels_slow_sound = pygame.mixer.Sound("sound/wheels_slow.mp3")
+        self.horn_sound = pygame.mixer.Sound("resources/horn.mp3")
+        self.emergency_braking_sound = pygame.mixer.Sound("resources/emergency_braking (1).mp3")
+        self.wheels_fast_sound = pygame.mixer.Sound("resources/wheels_fast.mp3")
+        self.wheels_slow_sound = pygame.mixer.Sound("resources/wheels_slow.mp3")
 
         # Статусы
         self.doors_open = False
         self.lights_on = False
+        self.heater_on = False
+        self.compressor_on=False
+        self.wiper_on=False
+        self.cabin_lights_on=False
+        self.pad_heater_on=False
         self.speed = 0
         self.current_gear = "Тормоз"
         self.target_speed = 0  # Целевая скорость
@@ -51,6 +57,8 @@ class ControlPanel:
         self.update_speed_thread = threading.Thread(target=self.update_speed)
         self.update_speed_thread.start()
 
+    ################################################################################################
+
     def create_left_panel(self, parent):
         """Создаем левую колонку с заголовком, изображениями и авторами"""
         left_frame = tk.Frame(parent, bg="#85898A")
@@ -62,21 +70,22 @@ class ControlPanel:
         title_label.pack(pady=10)
 
         # Загрузка изображения РЖД
-        rzd_image = Image.open("img/ржд.png")
+        rzd_image = Image.open("resources/ржд.png")
         rzd_image = rzd_image.resize((200, 100), Image.Resampling.LANCZOS)  # Изменяем размер изображения
         self.rzd_photo = ImageTk.PhotoImage(rzd_image)
         rzd_label = tk.Label(left_frame, image=self.rzd_photo, bg="#85898A")
         rzd_label.pack(pady=10)
 
         # Загрузка изображения электровоза
-        locomotive_image = Image.open("img/электровоз.png")
+        locomotive_image = Image.open("resources/электровоз.png")
         locomotive_image = locomotive_image.resize((200, 150), Image.Resampling.LANCZOS)  # Изменяем размер изображения
         self.locomotive_photo = ImageTk.PhotoImage(locomotive_image)
         locomotive_label = tk.Label(left_frame, image=self.locomotive_photo, bg="#85898A")
         locomotive_label.pack(pady=10)
 
         # Авторы
-        authors_label = tk.Label(left_frame, text="Авторы:\nМузейный Справочник", font=("Arial", 14), bg="#85898A", fg="black")
+        authors_label = tk.Label(left_frame, text="Авторы:\nМузейный Справочник", font=("Arial", 14), bg="#85898A",
+                                 fg="black")
         authors_label.pack(pady=10)
 
     def create_center_panel(self, parent):
@@ -87,6 +96,17 @@ class ControlPanel:
         self.control_frame = tk.Label(center_frame, text="Панель управления", font=("Arial", 16), bg="#85898A",
                                       fg="black")
         self.control_frame.pack(pady=10)
+
+        # Выбор направления движения
+        direction_frame = tk.Frame(center_frame, bg="#85898A")
+        direction_frame.pack(pady=10)
+
+        self.direction_label = tk.Label(direction_frame, text="Направление движения:", font=("Arial", 14), bg="#85898A")
+        self.direction_label.pack(side=tk.LEFT, padx=10)
+
+        self.direction_var = tk.StringVar(value="-")
+        self.direction_option_menu = tk.OptionMenu(direction_frame, self.direction_var, "-", "НАЗ", "ВП")
+        self.direction_option_menu.pack(side=tk.LEFT, padx=10)
 
         # Выбор хода
         gear_frame = tk.Frame(center_frame, bg="#85898A")
@@ -120,6 +140,31 @@ class ControlPanel:
                                        font=("Arial", 12), bg="#DEDEDC", relief="raised", width=20)
         self.lights_button.pack(pady=10)
 
+        # Кнопка Компрессор вкл/выкл
+        self.compressor_button = tk.Button(center_frame, text="Компрессор вкл/выкл", command=self.toggle_compressor,
+                                           font=("Arial", 12), bg="#DEDEDC", relief="raised", width=20)
+        self.compressor_button.pack(pady=10)
+
+        # Кнопка Подогрев пульта
+        self.heater_button = tk.Button(center_frame, text="Подогрев пульта", command=self.toggle_heater,
+                                       font=("Arial", 12), bg="#DEDEDC", relief="raised", width=20)
+        self.heater_button.pack(pady=10)
+
+        # Кнопка Освещение кабины
+        self.cabin_light_button = tk.Button(center_frame, text="Освещение кабины", command=self.toggle_cabin_lights,
+                                            font=("Arial", 12), bg="#DEDEDC", relief="raised", width=20)
+        self.cabin_light_button.pack(pady=10)
+
+        # Кнопка Прогрев колодок
+        self.pad_heater_button = tk.Button(center_frame, text="Прогрев колодок", command=self.toggle_pad_heater,
+                                           font=("Arial", 12), bg="#DEDEDC", relief="raised", width=20)
+        self.pad_heater_button.pack(pady=10)
+
+        # Кнопка Стеклоочиститель
+        self.wiper_button = tk.Button(center_frame, text="Стеклоочиститель", command=self.toggle_wiper,
+                                      font=("Arial", 12), bg="#DEDEDC", relief="raised", width=20)
+        self.wiper_button.pack(pady=10)
+
     def create_right_panel(self, parent):
         """Информационный монитор (правая колонка)"""
         right_frame = tk.Frame(parent, bg="#85898A")
@@ -128,6 +173,10 @@ class ControlPanel:
         self.monitor_label = tk.Label(right_frame, text="Информационный монитор", font=("Arial", 16), bg="#85898A",
                                       fg="black")
         self.monitor_label.pack(pady=10)
+
+        # Индикатор направления движения
+        self.status_label = tk.Label(right_frame, text="Направление движения:", font=("Arial", 14), bg="#85898A", fg="black")
+        self.status_label.pack(pady=5)
 
         # Индикатор двери
         self.door_indicator = tk.Label(right_frame, text="Двери: Закрыты", font=("Arial", 14), bg="#85898A",
@@ -139,8 +188,34 @@ class ControlPanel:
                                          fg="gray")
         self.lights_indicator.pack()
 
+        # Индикатор состояния компрессора
+        self.compressor_status_label = tk.Label(right_frame, text="Компрессор: Выключен", font=("Arial", 14),
+                                                bg="#85898A", fg="gray")
+        self.compressor_status_label.pack(pady=5)
+
+        # Индикатор подогрева пульта
+        self.heater_status_label = tk.Label(right_frame, text="Подогрев пульта: Выключен", font=("Arial", 14),
+                                            bg="#85898A", fg="gray")
+        self.heater_status_label.pack(pady=5)
+
+        # Индикатор освещения кабины
+        self.cabin_lights_status_label = tk.Label(right_frame, text="Освещение кабины: Выключено", font=("Arial", 14),
+                                                  bg="#85898A", fg="gray")
+        self.cabin_lights_status_label.pack(pady=5)
+
+        # Индикатор прогрева колодок
+        self.pad_heater_status_label = tk.Label(right_frame, text="Прогрев колодок: Выключен", font=("Arial", 14),
+                                                bg="#85898A", fg="gray")
+        self.pad_heater_status_label.pack(pady=5)
+
+        # Индикатор стеклоочистителя
+        self.wiper_status_label = tk.Label(right_frame, text="Стеклоочиститель: Выключен", font=("Arial", 14),
+                                           bg="#85898A", fg="gray")
+        self.wiper_status_label.pack(pady=5)
+
         # Тормозная магистраль
-        self.mileage_indicator = tk.Label(right_frame, text=f"Тормозная магистраль: {self.brake_line} км", font=("Arial", 14),
+        self.mileage_indicator = tk.Label(right_frame, text=f"Тормозная магистраль: {self.brake_line} км",
+                                          font=("Arial", 14),
                                           bg="#85898A")
         self.mileage_indicator.pack()
 
@@ -173,6 +248,7 @@ class ControlPanel:
         # Строка спидометра
         self.speed_display_bar(right_frame)
 
+    ################################################################################################
     def speed_display_bar(self, parent):
         """Строка спидометра"""
         self.figure = Figure(figsize=(4, 0.5), facecolor="#85898A")  # Уменьшенный размер
@@ -205,19 +281,23 @@ class ControlPanel:
         self.update_speed_display_bar()
         self.speed_indicator.config(text=f"Скорость: {self.speed} км/ч")
 
-    def change_gear(self, value):
+    def change_gear(self, *args):
         if not self.fuel_empty:  # Проверяем, есть ли топливо
-            self.current_gear = value
+            self.current_gear = self.gear_var.get()
 
-            # Определяем целевую скорость в зависимости от выбранной передачи
-            if self.current_gear == "Тормоз":
-                self.start_slow_down(0)
-            elif self.current_gear == "Ход 1":
-                self.start_acceleration(30)
-            elif self.current_gear == "Ход 2":
-                self.start_acceleration(60)
-            elif self.current_gear == "Ход 3":
-                self.start_acceleration(100)
+            # Определяем целевую скорость на основе текущего хода
+            target_speeds = {
+                "Тормоз": 0,
+                "Ход 1": 30,
+                "Ход 2": 60,
+                "Ход 3": 90
+            }
+            new_target_speed = target_speeds[self.current_gear]
+
+            if new_target_speed > self.speed:
+                self.start_acceleration(new_target_speed)  # Увеличиваем скорость
+            else:
+                self.start_slow_down(new_target_speed)  # Понижаем скорость
         else:
             print("Топливо закончилось! Поезд не может двигаться.")
 
@@ -270,6 +350,48 @@ class ControlPanel:
             self.lights_indicator.config(text="Фары: Включены", fg="yellow")
         else:
             self.lights_indicator.config(text="Фары: Выключены", fg="gray")
+
+    def toggle_compressor(self):
+        """Переключение состояния компрессора"""
+        self.compressor_on = not self.compressor_on
+        if self.compressor_on:
+            self.compressor_status_label.config(text="Компрессор: Включен", fg="yellow")
+        else:
+            self.compressor_status_label.config(text="Компрессор: Выключен", fg="gray")
+
+    def toggle_heater(self):
+        """Переключение состояния подогрева пульта"""
+        self.heater_on = not self.heater_on
+        if self.heater_on:
+            self.heater_status_label.config(text="Подогрев пульта: Включен", fg="yellow")
+        else:
+            self.heater_status_label.config(text="Подогрев пульта: Выключен", fg="gray")
+
+    def toggle_cabin_lights(self):
+        """Переключение состояния подогрева пульта"""
+        self.cabin_lights_on = not self.cabin_lights_on
+        if self.cabin_lights_on:
+            self.cabin_lights_status_label.config(text="Освещение кабины: Включено", fg="yellow")
+        else:
+            self.cabin_lights_status_label.config(text="Освещение кабины: Выключено", fg="gray")
+
+
+    def toggle_pad_heater(self):
+        """Переключение состояния подогрева пульта"""
+        self.pad_heater_on = not self.pad_heater_on
+        if self.pad_heater_on:
+            self.pad_heater_status_label.config(text="Прогрев колодок: Включен", fg="yellow")
+        else:
+            self.pad_heater_status_label.config(text="Прогрев колодок: Выключен", fg="gray")
+
+    def toggle_wiper(self):
+        """Переключение состояния подогрева пульта"""
+        self.wiper_on = not self.wiper_on
+        if self.wiper_on:
+            self.wiper_status_label.config(text="Стеклоочиститель: Включен", fg="yellow")
+        else:
+            self.wiper_status_label.config(text="Стеклоочиститель: Выключен", fg="gray")
+
 
     def emergency_brake(self):
         self.start_emergency_slow_down(0)  # Экстренное торможение до 0 км/ч
