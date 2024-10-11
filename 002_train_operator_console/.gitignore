@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+
+# PyCharm
+.idea/
+*.iml
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Виртуальные окружения
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Модели и данные нейросети
+*.h5
+*.hdf5
+*.ckpt
+*.pth
+*.pt
+*.onnx
+data/
+
+# Логи
+*.log
+
+# Результаты обучения
+results/
+output/
+/trash/voice_recognition_model.ipynb
+/trash/train dataset.zip
+/trash/Технические требования.docx
+/trash/Readme.docx
+/trash/env_example.zip
+/trash/
+/trash/
+/train_dataset/
+/_app/
+/ml/trained_model.keras
+/trash/example/
