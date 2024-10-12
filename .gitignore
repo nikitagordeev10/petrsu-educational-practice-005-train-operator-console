@@ -41,14 +41,14 @@ data/
 # Результаты обучения
 results/
 output/
-/trash/voice_recognition_model.ipynb
-/trash/train dataset.zip
-/trash/Технические требования.docx
-/trash/Readme.docx
-/trash/env_example.zip
-/trash/
-/trash/
-/train_dataset/
+/_trash/voice_recognition_model.ipynb
+/_trash/train dataset.zip
+/_trash/Технические требования.docx
+/_trash/Readme.docx
+/_trash/env_example.zip
+/_trash/
+/_trash/
+/data/
 /_app/
 /ml/trained_model.keras
-/trash/example/
+/_trash/example/
